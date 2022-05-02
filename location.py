@@ -9,7 +9,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('testfiles/easy.avi')
+cap = cv.VideoCapture('3.avi')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -236,7 +236,7 @@ while True:
 
 		for corner in corners_old:
 			if corner != None:
-				cv.circle(result,(corner[0],corner[1]), w//6, (0,255,0), -1)
+				cv.circle(result,(corner[0],corner[1]), 15, (0,255,0), -1)
 
 		#overwritting the old points with the current points for next frame calculation
 		corners_old = corners
