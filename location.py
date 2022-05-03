@@ -1,5 +1,6 @@
 from utils import *
-from better_lines import *
+from lines import *
+# from better_lines import *
 from QR import *
 from polation import *
 from debugging import *
@@ -221,7 +222,7 @@ while True:
 					corners[0] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
 
-		x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0, xside_old, yside_old)
+		x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 		coordinate = [0,0]
 		if square[0] == 0:
 			coordinate[0] = x_est
@@ -308,7 +309,7 @@ while True:
 	stacked = np.hstack((full_mask_3,resized,result))
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
-	k = cv.waitKey(0) & 0xFF
+	k = cv.waitKey(30) & 0xFF
 	if k == 27:
 		break
 	#if len(xval) > 2 and len(yval) > 2:
