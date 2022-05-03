@@ -1,5 +1,5 @@
 from utils import *
-from lines import *
+from better_lines import *
 from QR import *
 from polation import *
 from debugging import *
@@ -56,20 +56,20 @@ while True:
 		print("Can't receive frame (stream end?). Exiting ...")
 		break
 
-	#Calculate the center of the frame as reference point
-	h, w, x0, y0 = dimensions(frame)
-
 	#Resize it to a standard frame of 300x240
 	resized = scale_down(frame)
 
+	#Calculate the center of the frame as reference point
+	h, w, x0, y0 = dimensions(resized)
+
 	#crop the frame to select the the QR code out of the image
-	crop = crop_image(frame, h ,w)
+	crop = crop_image(resized, h ,w)
 
 	#create the mask of red line detection
-	full_mask = mask(frame)
+	full_mask = mask(resized)
 
 	#Bitwise-AND mask and original frame
-	result = cv.bitwise_and(frame, frame, mask= full_mask)
+	result = cv.bitwise_and(resized, resized, mask= full_mask)
 
 	#Use the Hough transformation to calculate lines
 	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=100,maxLineGap=10)
@@ -86,6 +86,8 @@ while True:
 
 	#Calculate the intersections of the lines
 	intersection = sorted(points_intersection(filtered_lines, h, w))
+	if intersection is None:
+		continue
 
 	#start of the program
 	#left_bottom corner of the first square is the start position of the grid
@@ -218,7 +220,7 @@ while True:
 				elif corners[0] == None and point[0] < x0 and point[1] < y0:
 					corners[0] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,0,255), -1)
-
+					
 		x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 		coordinate = [0,0]
 		if square[0] == 0:
@@ -234,9 +236,9 @@ while True:
 		else:
 			coordinate[1] = - (abs(square[1]) - y_est)
 
-		for corner in corners_old:
-			if corner != None:
-				cv.circle(result,(corner[0],corner[1]), 15, (0,255,0), -1)
+		#for corner in corners_old:
+			#if corner != None:
+				#cv.circle(result,(corner[0],corner[1]), 15, (0,255,0), -1)
 
 		#overwritting the old points with the current points for next frame calculation
 		corners_old = corners
@@ -303,15 +305,15 @@ while True:
 	full_mask_3 = cv.cvtColor(full_mask, cv.COLOR_GRAY2BGR)
 
 	#stacking 
-	stacked = np.hstack((full_mask_3,frame,result))
-
+	stacked = np.hstack((full_mask_3,resized,result))
+ 
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
-	k = cv.waitKey(30) & 0xFF
+	k = cv.waitKey(0) & 0xFF
 	if k == 27:
 		break
 	#if len(xval) > 2 and len(yval) > 2:
-		#draw_coordinates(xval, yval)
+		#draw_coordinates(xval, yval) 
 		#draw_fps(fpsval)
 
 cap.release()
