@@ -1,6 +1,5 @@
-from cv2 import resize
 from utils import *
-from better_lines import *
+from lines import *
 from QR import *
 from polation import *
 import numpy as np
@@ -57,10 +56,10 @@ while True:
 		break
 
 	#Calculate the center of the frame as reference point
-	h, w, x0, y0 = dimensions(frame)
+	#h, w, x0, y0 = dimensions(frame)
 
 	#crop the frame to select the the QR code out of the image
-	crop = crop_image(frame, h ,w)
+	#crop = crop_image(frame, h ,w)
 
 	#Resize it to a standard frame of 300x240
 	resized = scale_down(frame)
@@ -72,7 +71,7 @@ while True:
 	full_mask = mask(resized)
 
 	#Use the Hough transformation to calculate lines
-	lines = cv.HoughLinesP(full_mask,1,np.pi/180,50,minLineLength=75, maxLineGap=10)
+	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75, maxLineGap=10)
 	if lines is None:
 		start = False
 		continue
@@ -245,13 +244,13 @@ while True:
 
 	#QR code dedection
 	#latest_qr is the latest qr that is scanned 
-	if qr_counter == 0:
-		decoded = qr(crop)
-		qr_counter = 100
-		if len(decoded) != 0 and latest_qr != decoded[0][0]:
-			latest_qr = decoded[0][0]
-	else:
-		qr_counter -= 1
+	#if qr_counter == 0:
+	#	decoded = qr(crop)
+	#	qr_counter = 100
+	#	if len(decoded) != 0 and latest_qr != decoded[0][0]:
+	#		latest_qr = decoded[0][0]
+	#else:
+	#	qr_counter -= 1
 
 	# time when we finish processing for this frame
 	new_frame_time = time.time()

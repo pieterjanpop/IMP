@@ -1,4 +1,3 @@
-from cv2 import sort
 import numpy as np
 
 def filter_lines(lines, h , w):
