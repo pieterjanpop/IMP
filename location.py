@@ -26,8 +26,6 @@ new_frame_time = 0
 xval = []
 yval = []
 fpsval = []
-xsquareval = []
-ysquareval = []
 
 #latest qr code
 latest_qr = None
@@ -44,6 +42,7 @@ start = False
 changed = False
 square_counter = 0
 qr_counter = 0
+square = [0,0]
 
 #while loop for entire video
 #capture is correct
@@ -73,7 +72,9 @@ while True:
 
 	#Use the Hough transformation to calculate lines
 	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=100,maxLineGap=10)
+
 	if lines is None:
+		start = False
 		continue
 
 	#returns a filtered set of lines
@@ -82,7 +83,7 @@ while True:
 	#Drawing the filtered lines as a square
 	for line in filtered_lines:
 		x1,y1,x2,y2 = line
-		cv.line(result,(x1,y1),(x2,y2),(0,0,255),2)
+		cv.line(result,(x1,y1),(x2,y2),(0,255,0),2)
 
 	#Calculate the intersections of the lines
 	intersection = sorted(points_intersection(filtered_lines, h, w))
@@ -120,7 +121,6 @@ while True:
 			#start calculation 
 			start_x, start_y, length_side_x, length_side_y = interpolate(corners, x0, y0)
 			coordinate = [abs(start_x), abs(start_y)]
-			square = [0,0]
 			xside_old = length_side_x
 			yside_old = length_side_y
 			start = True
@@ -210,18 +210,18 @@ while True:
 			for point in intersection:
 				if corners[3] == None and point[0] >= x0 and point[1] >= y0:
 					corners[3] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,0,255), -1)
+					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
 				elif corners[2] == None and point[0] >= x0 and point[1] < y0:
 					corners[2] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,0,255), -1)
+					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
 				elif corners[1] == None and point[0] < x0 and point[1] >= y0:
 					corners[1] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,0,255), -1)
+					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
 				elif corners[0] == None and point[0] < x0 and point[1] < y0:
 					corners[0] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,0,255), -1)
-					
-		x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
+					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
+
+		x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0, xside_old, yside_old)
 		coordinate = [0,0]
 		if square[0] == 0:
 			coordinate[0] = x_est
@@ -236,9 +236,9 @@ while True:
 		else:
 			coordinate[1] = - (abs(square[1]) - y_est)
 
-		#for corner in corners_old:
-			#if corner != None:
-				#cv.circle(result,(corner[0],corner[1]), 15, (0,255,0), -1)
+		for corner in corners_old:
+			if corner != None:
+				cv.circle(result,(corner[0],corner[1]), 22, (0,255,0), -1)
 
 		#overwritting the old points with the current points for next frame calculation
 		corners_old = corners
@@ -306,7 +306,6 @@ while True:
 
 	#stacking 
 	stacked = np.hstack((full_mask_3,resized,result))
- 
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
 	k = cv.waitKey(0) & 0xFF

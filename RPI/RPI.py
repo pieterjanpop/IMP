@@ -1,5 +1,6 @@
+from cv2 import resize
 from utils import *
-from lines import *
+from better_lines import *
 from QR import *
 from polation import *
 import numpy as np
@@ -41,8 +42,6 @@ qr_changed = False
 square_counter = 0
 qr_counter = 0
 
-k= 0
-
 #while loop for entire video
 #capture is correct
 while True:
@@ -67,14 +66,15 @@ while True:
 	resized = scale_down(frame)
 
 	#Calculate the center of the resized frame as reference point
-	h, w, x0, y0 = dimensions(frame)
+	h, w, x0, y0 = dimensions(resized)
 
 	#create the mask of red line detection
 	full_mask = mask(resized)
 
 	#Use the Hough transformation to calculate lines
-	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75, maxLineGap=10)
+	lines = cv.HoughLinesP(full_mask,1,np.pi/180,50,minLineLength=75, maxLineGap=10)
 	if lines is None:
+		start = False
 		continue
 
 	#returns a filtered set of lines
@@ -279,10 +279,5 @@ while True:
 		print("-----------------------------------------")
 		print("waiting for start square")
 		print("-----------------------------------------")
-
-	if k == 300:
-		break
-	else:
-		k += 1
 
 cap.release()
