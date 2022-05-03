@@ -9,7 +9,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('3.avi')
+cap = cv.VideoCapture('output.avi')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -307,11 +307,11 @@ while True:
 
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
-	k = cv.waitKey(0) & 0xFF
+	k = cv.waitKey(30) & 0xFF
 	if k == 27:
 		break
-	if len(xval) > 2 and len(yval) > 2:
-		draw_coordinates(xval, yval)
+	#if len(xval) > 2 and len(yval) > 2:
+		#draw_coordinates(xval, yval)
 		#draw_fps(fpsval)
 
 cap.release()
