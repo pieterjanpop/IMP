@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 from math import floor, ceil
 import numpy as np
-import cv2
+import cv2 as cv
 
 def draw_coordinates(xval, yval):
 	colors = ['blue']
@@ -10,7 +10,7 @@ def draw_coordinates(xval, yval):
 	colors[-2] = 'orange'
 
 	plt.plot(xval, yval, color='green', linestyle='dashed', linewidth = 1)
-	plt.scatter(xval, yval, s=3,color=colors, marker=',')
+	plt.scatter(xval, yval, s=3, color=colors, marker=',')
 
 	# changing the tick of the axis
 	min_x, max_x, min_y, max_y = boundaries(xval, yval)
@@ -21,7 +21,7 @@ def draw_coordinates(xval, yval):
 	plt.xlabel('x - axis')
 	# naming the y axis
 	plt.ylabel('y - axis')
-	 
+		
 	# giving a title to my graph
 	plt.title('Flight of the drone')
 

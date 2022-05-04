@@ -1,6 +1,6 @@
 from utils import *
-from lines import *
-# from better_lines import *
+#from lines import *
+from better_lines import *
 from QR import *
 from polation import *
 from debugging import *
@@ -10,7 +10,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('output.avi')
+cap = cv.VideoCapture('3.avi')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -44,6 +44,26 @@ changed = False
 square_counter = 0
 qr_counter = 0
 square = [0,0]
+
+x=[]
+y=[]
+
+plt.ion()
+
+# here we are creating sub plots
+figure, ax = plt.subplots(figsize=(10, 8))
+line1, = ax.plot(x, y)
+
+# naming the x axis
+plt.xlabel('x - axis')
+# naming the y axis
+plt.ylabel('y - axis')
+	
+# giving a title to my graph
+plt.title('Flight of the drone')
+
+# adding the grid
+plt.grid()
 
 #while loop for entire video
 #capture is correct
@@ -84,7 +104,7 @@ while True:
 	#Drawing the filtered lines as a square
 	for line in filtered_lines:
 		x1,y1,x2,y2 = line
-		cv.line(result,(x1,y1),(x2,y2),(0,255,0),2)
+		cv.line(result,(x1,y1),(x2,y2),(0,0,255),2)
 
 	#Calculate the intersections of the lines
 	intersection = sorted(points_intersection(filtered_lines, h, w))
@@ -312,9 +332,27 @@ while True:
 	k = cv.waitKey(30) & 0xFF
 	if k == 27:
 		break
-	#if len(xval) > 2 and len(yval) > 2:
-		#draw_coordinates(xval, yval) 
-		#draw_fps(fpsval)
+
+	if len(xval) > 3:
+		# updating data values
+		line1.set_xdata(xval)
+		line1.set_ydata(yval)
+		colors = ['blue']
+		colors *= len(xval)
+		colors[-1] = 'red'
+		colors[-2] = 'orange'
+		plt.scatter(xval, yval, s=3, color=colors, marker=',')
+		min_x, max_x, min_y, max_y = boundaries(xval, yval)
+		plt.xticks(np.arange(min_x - 1, max_x + 1, 1.0))
+		plt.yticks(np.arange(min_y - 1, max_x + 1, 1.0))
+
+		# drawing updated values
+		figure.canvas.draw()
+	
+		# This will run the GUI event
+		# loop until all UI events
+		# currently waiting have been processed
+		figure.canvas.flush_events()
 
 cap.release()
 cv.destroyAllWindows()
