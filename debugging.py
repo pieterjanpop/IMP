@@ -9,8 +9,8 @@ def draw_coordinates(xval, yval):
 	colors[-1] = 'red'
 	colors[-2] = 'orange'
 
-	plt.plot(xval, yval, color='green', linestyle='dashed', linewidth = 1)
-	plt.scatter(xval, yval, s=3, color=colors, marker=',')
+	#plt.plot(xval, yval, color='red', linestyle='dashed', linewidth = 1)
+	plt.scatter(xval, yval, s=1, color=colors, marker='+')
 
 	# changing the tick of the axis
 	min_x, max_x, min_y, max_y = boundaries(xval, yval)

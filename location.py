@@ -1,5 +1,4 @@
 from utils import *
-#from lines import *
 from better_lines import *
 from QR import *
 from polation import *
@@ -10,7 +9,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('3.avi')
+cap = cv.VideoCapture('Video.mov')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -45,25 +44,27 @@ square_counter = 0
 qr_counter = 0
 square = [0,0]
 
-x=[]
-y=[]
+debug = True
+if debug == True:
+	x=[]
+	y=[]
 
-plt.ion()
+	plt.ion()
 
-# here we are creating sub plots
-figure, ax = plt.subplots(figsize=(10, 8))
-line1, = ax.plot(x, y)
+	# here we are creating sub plots
+	figure, ax = plt.subplots(figsize=(10, 8))
+	line1, = ax.plot(x, y)
 
-# naming the x axis
-plt.xlabel('x - axis')
-# naming the y axis
-plt.ylabel('y - axis')
-	
-# giving a title to my graph
-plt.title('Flight of the drone')
+	# naming the x axis
+	plt.xlabel('x - axis')
+	# naming the y axis
+	plt.ylabel('y - axis')
+		
+	# giving a title to my graph
+	plt.title('Flight of the drone')
 
-# adding the grid
-plt.grid()
+	# adding the grid
+	plt.grid()
 
 #while loop for entire video
 #capture is correct
@@ -76,6 +77,9 @@ while True:
 		print("Can't receive frame (stream end?). Exiting ...")
 		break
 
+	h, w, x0, y0 = dimensions(frame)
+	crop = crop_image(frame, h ,w)
+
 	#Resize it to a standard frame of 300x240
 	resized = scale_down(frame)
 
@@ -83,7 +87,7 @@ while True:
 	h, w, x0, y0 = dimensions(resized)
 
 	#crop the frame to select the the QR code out of the image
-	crop = crop_image(resized, h ,w)
+	#crop = crop_image(resized, h ,w)
 
 	#create the mask of red line detection
 	full_mask = mask(resized)
@@ -107,7 +111,7 @@ while True:
 		cv.line(result,(x1,y1),(x2,y2),(0,0,255),2)
 
 	#Calculate the intersections of the lines
-	intersection = sorted(points_intersection(filtered_lines, h, w))
+	intersection = points_intersection(filtered_lines, h, w)
 	if intersection is None:
 		continue
 
@@ -125,6 +129,7 @@ while True:
 	yside_new = None
 
 	if start == False:
+		intersection = sort_corners(intersection, x0, y0)
 		for point in intersection:
 			if point[0] >= x0 and point[1] >= y0:
 				corners[3] = point
@@ -228,17 +233,18 @@ while True:
 		corners = check_corners(corners, xside_old, yside_old)
 		set_corners = set(corners)
 		if None in set_corners:
+			intersection = sort_corners(intersection, x0, y0)
 			for point in intersection:
-				if corners[3] == None and point[0] >= x0 and point[1] >= y0:
+				if corners[3] == None:
 					corners[3] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
-				elif corners[2] == None and point[0] >= x0 and point[1] < y0:
+				elif corners[2] == None:
 					corners[2] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
-				elif corners[1] == None and point[0] < x0 and point[1] >= y0:
+				elif corners[1] == None:
 					corners[1] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
-				elif corners[0] == None and point[0] < x0 and point[1] < y0:
+				elif corners[0] == None:
 					corners[0] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
 
@@ -259,7 +265,7 @@ while True:
 
 		for corner in corners_old:
 			if corner != None:
-				cv.circle(result,(corner[0],corner[1]), 22, (0,255,0), -1)
+				cv.circle(result,(corner[0],corner[1]), 50, (0,255,0), -1)
 
 		#overwritting the old points with the current points for next frame calculation
 		corners_old = corners
@@ -282,9 +288,10 @@ while True:
 	if qr_counter == 0:
 		decoded = qr(crop)
 		print(decoded)
-		qr_counter = 100
+		qr_counter = 5
 		if len(decoded) != 0 and latest_qr != decoded[0][0]:
 			latest_qr = decoded[0][0]
+			qr_counter = 50
 	else:
 		qr_counter -= 1
 
@@ -329,11 +336,11 @@ while True:
 	stacked = np.hstack((full_mask_3,resized,result))
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
-	k = cv.waitKey(30) & 0xFF
+	k = cv.waitKey(0) & 0xFF
 	if k == 27:
 		break
 
-	if len(xval) > 3:
+	if len(xval) > 3 and debug == True:
 		# updating data values
 		line1.set_xdata(xval)
 		line1.set_ydata(yval)
@@ -342,9 +349,8 @@ while True:
 		colors[-1] = 'red'
 		colors[-2] = 'orange'
 		plt.scatter(xval, yval, s=3, color=colors, marker=',')
-		min_x, max_x, min_y, max_y = boundaries(xval, yval)
-		plt.xticks(np.arange(min_x - 1, max_x + 1, 1.0))
-		plt.yticks(np.arange(min_y - 1, max_x + 1, 1.0))
+		plt.xticks(np.arange(-5, 5, 1.0))
+		plt.yticks(np.arange(-5, 5, 1.0))
 
 		# drawing updated values
 		figure.canvas.draw()

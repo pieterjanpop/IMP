@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+from math import dist
 
 ###CAMERA/IMAGE FUNCTIONS###
 
@@ -49,12 +50,12 @@ def mask(frame):
 
 	#Red is a color on both sides on the spectrum so we splith the mask in 2 parts
 	#lower boundary RED color range values; Hue (0 - 10)
-	lower1 = np.array([0, 30, 30])
+	lower1 = np.array([0, 60, 60])
 	upper1 = np.array([30, 255, 255])
 
 	#Upper boundary RED color range values; Hue (160 - 180)
-	lower2 = np.array([150,30,30])
-	upper2 = np.array([180,255,255])
+	lower2 = np.array([150, 60, 60])
+	upper2 = np.array([180, 255, 255])
 
 	#Threshold the HSV image to get only red colors
 	lower_mask = cv.inRange(hsv, lower1, upper1)
@@ -124,3 +125,37 @@ def calculate_side(intersection, xside_old, yside_old):
 		yside /= y
 
 	return xside, yside
+
+#0: left_top
+#1: left_bottom
+#2: right_top
+#3: right_bottom
+def sort_corners(points, x0, y0):
+	sorted_points = [(0,0), (0,0), (0,0), (0,0)]
+	for point in points:
+		if point[0] >= x0 and point[1] >= y0:
+			if distance_to_center(point, sorted_points[3], x0, y0):
+				sorted_points[3] = point
+		elif point[0] >= x0 and point[1] < y0:
+			if distance_to_center(point, sorted_points[2], x0, y0):
+				sorted_points[2] = point
+		elif point[0] < x0 and point[1] >= y0:
+			if distance_to_center(point, sorted_points[1], x0, y0):
+				sorted_points[1] = point
+		elif point[0] < x0 and point[1] < y0:
+			if distance_to_center(point, sorted_points[0], x0, y0):
+				sorted_points[0] = point
+
+	return sorted_points
+
+def distance_to_center(point1, point2, x0, y0):
+	if point2 == (0,0):
+		return True
+	else:
+		print(point1)
+		distance_1 = abs(point1[0] - x0) + abs(point1[1] - y0)
+		distance_2 = abs(point2[0] - x0) + abs(point2[1] - y0)
+		if distance_1 < distance_2:
+			return True
+		else:
+			return False
