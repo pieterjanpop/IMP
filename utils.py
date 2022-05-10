@@ -27,7 +27,7 @@ def undistort(frame):
     return dst
 
 def scale_down(frame):
-	dim = (320,240)
+	dim = (300,200)
 	resized = cv.resize(frame, dim, interpolation = cv.INTER_NEAREST)
 
 	return resized
@@ -101,26 +101,30 @@ def line_intersection(line1, line2):
 	return (x, y)
 
 #calculates the sides of the square
-def calculate_side(intersection, xside_old, yside_old):
+def calculate_side(corners, xside_old, yside_old):
 	x = 0
 	y = 0
 	xside = 0
 	yside = 0
-	for i in range(0, len(intersection) - 1):
-		for n in range(1, len(intersection)):
-			if abs(intersection[i][1] - intersection[n][1]) < 25 and abs(intersection[i][0] - intersection[n][0]) < xside_old * 1.5:
-				xside += abs(intersection[i][0] - intersection[n][0])
-				x += 1
-			elif abs(intersection[i][0] - intersection[n][0]) < 25 and abs(intersection[i][1] - intersection[n][1]) < yside_old * 1.5:
-				yside += abs(intersection[i][1] - intersection[n][1])
-				y += 1
-	if xside == 0:
-		xside = None
+	for point1 in corners:
+		for point2 in corners:
+			if point1 != None and point2 != None:
+				distx = abs(point1[0] - point2[0])
+				disty = abs(point1[1] - point2[1])
+				if distx > 10:
+					xside += distx
+					x += 1
+				if disty > 10:
+					yside += disty
+					y += 1
+
+	if xside < 20:
+		xside = xside_old
 	else:
 		xside /= x
 
-	if yside == 0:
-		yside = None
+	if yside < 20:
+		yside = yside_old
 	else:
 		yside /= y
 
@@ -166,12 +170,12 @@ def calculate_coordinate(square, x_est, y_est):
 	elif square[0] > 0:
 		coordinate[0] = square[0] + x_est
 	else:
-		coordinate[0] = - (abs(square[0]) - x_est)
+		coordinate[0] =- (abs(square[0]) - x_est)
 	if square[1] == 0:
 		coordinate[1] = y_est
 	elif square[1] > 0:
 		coordinate[1] = square[1] + y_est
 	else:
-		coordinate[1] = - (abs(square[1]) - y_est)
+		coordinate[1] =- (abs(square[1]) - y_est)
 
 	return coordinate

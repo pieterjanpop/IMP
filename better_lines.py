@@ -23,7 +23,7 @@ def vertical_line(line, vertical):
         vertical[line[0][0]] = [list(line[0])]
     else:
         for key in vertical:
-            if abs(key - line[0][0]) < 30:
+            if abs(key - line[0][0]) < 40:
                 vertical[key].append(list(line[0]))
                 return vertical
 
@@ -36,7 +36,7 @@ def horizontal_line(line, horizontal):
         horizontal[line[0][1]] = [list(line[0])]
     else:
         for key in horizontal:
-            if abs(key - line[0][1]) < 30:
+            if abs(key - line[0][1]) < 40:
                 horizontal[key].append(list(line[0]))
                 return horizontal
 

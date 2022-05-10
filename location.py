@@ -9,7 +9,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('Video_2.mov')
+cap = cv.VideoCapture('Video_6.mov')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -147,8 +147,8 @@ while True:
 
 		set_corners = set(corners)
 		if mistake == True:
-			corners = check_corners(corners, xside_old, yside_old)
-			print(len(corners), 'mistake length corners')
+			xside_new, yside_new = calculate_side(corners, xside_old, yside_old)
+			corners = check_corners(corners, int(xside_new), int(yside_new))
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 			coordinate = calculate_coordinate(square, x_est, y_est)
 
@@ -262,29 +262,13 @@ while True:
 			for index in remove_at_index:
 				corners[index] = None
 
-		corners = check_corners(corners, xside_old, yside_old)
-		set_corners = set(corners)
-		if None in set_corners:
-			intersection = sort_corners(intersection, x0, y0)
-			for point in intersection:
-				if corners[3] == None:
-					corners[3] = point
-					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
-				elif corners[2] == None:
-					corners[2] = point
-					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
-				elif corners[1] == None:
-					corners[1] = point
-					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
-				elif corners[0] == None:
-					corners[0] = point
-					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
+		#xside_new, yside_new = calculate_side(corners, xside_old, yside_old)
+		corners = check_corners(corners, int(xside_old), int(yside_old))
 
 		set_corners = set(corners)
 		if len(set_corners) < 2:
 			mistake = True
 		else:
-			print(corners)
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 			coordinate = calculate_coordinate(square, x_est, y_est)
 
