@@ -43,8 +43,9 @@ changed = False
 square_counter = 0
 qr_counter = 0
 square = [0,0]
+mistake = False
 
-debug = True
+debug = False
 if debug == True:
 	x=[]
 	y=[]
@@ -96,7 +97,7 @@ while True:
 	result = cv.bitwise_and(resized, resized, mask= full_mask)
 
 	#Use the Hough transformation to calculate lines
-	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=100,maxLineGap=10)
+	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75,maxLineGap=10)
 
 	if lines is None:
 		start = False
@@ -128,7 +129,7 @@ while True:
 	xside_new = None
 	yside_new = None
 
-	if start == False:
+	if start == False or mistake == True:
 		intersection = sort_corners(intersection, x0, y0)
 		for point in intersection:
 			if point[0] >= x0 and point[1] >= y0:
@@ -141,9 +142,34 @@ while True:
 				corners[0] = point
 
 		set_corners = set(corners)
+		if mistake == True:
+			corners = check_corners(corners, xside_old, yside_old)
+			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
+			coordinate = calculate_coordinate(square, x_est, y_est)
+
+			for corner in corners_old:
+				if corner != None:
+					cv.circle(result,(corner[0],corner[1]), 50, (0,255,0), -1)
+
+			#overwritting the old points with the current points for next frame calculation
+			corners_old = corners
+			for corner in corners:
+				if corner != None:
+					cv.circle(result,(corner[0],corner[1]), 5, (255,255,255), -1)
+
+			if xside_new != None and abs(xside_new - xside_old) < 30:
+				xside_old = xside_new
+			if yside_new != None and abs(yside_new - yside_old) < 30:
+				yside_old = yside_new
+
+			#adding the coordinate values for the plot
+			if coordinate != "fail":
+				xval.append(coordinate[0])
+				yval.append(coordinate[1])
+
 		if None in set_corners:
 			pass
-		else:
+		elif mistake == False:
 			#start calculation 
 			start_x, start_y, length_side_x, length_side_y = interpolate(corners, x0, y0)
 			coordinate = [abs(start_x), abs(start_y)]
@@ -159,7 +185,7 @@ while True:
 
 		#link the new points to the old labelled corners
 		for point in intersection:
-			if corners_old[0] != None and abs(point[0] - corners_old[0][0]) < 50 and abs(point[1] - corners_old[0][1]) < 50:
+			if corners_old[0] != None and abs(point[0] - corners_old[0][0]) < 40 and abs(point[1] - corners_old[0][1]) < 40:
 				if point[0] > x0 + 10:
 					new_square = "left"
 				elif point[1] > y0 + 10:
@@ -167,7 +193,7 @@ while True:
 
 				corners[0] = point
 
-			elif corners_old[1] != None and abs(point[0] - corners_old[1][0]) < 50 and abs(point[1] - corners_old[1][1]) < 50:
+			elif corners_old[1] != None and abs(point[0] - corners_old[1][0]) < 40 and abs(point[1] - corners_old[1][1]) < 40:
 				if point[0] > x0 + 10:
 					new_square = "left"
 				elif point[1] < y0 - 10:
@@ -175,7 +201,7 @@ while True:
 
 				corners[1] = point
 
-			elif corners_old[2] != None and abs(point[0] - corners_old[2][0]) < 50 and abs(point[1] - corners_old[2][1]) < 50:
+			elif corners_old[2] != None and abs(point[0] - corners_old[2][0]) < 40 and abs(point[1] - corners_old[2][1]) < 40:
 				if point[0] < x0 - 10:
 					new_square = "right"
 				elif point[1] > y0 + 10:
@@ -183,7 +209,7 @@ while True:
 
 				corners[2] = point
 
-			elif corners_old[3] != None and abs(point[0] - corners_old[3][0]) < 50 and abs(point[1] - corners_old[3][1]) < 50:
+			elif corners_old[3] != None and abs(point[0] - corners_old[3][0]) < 40 and abs(point[1] - corners_old[3][1]) < 40:
 				if point[0] < x0 - 10:
 					new_square = "right"
 				elif point[1] < y0 - 10:
@@ -248,24 +274,16 @@ while True:
 					corners[0] = point
 					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
 
-		x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
-		coordinate = [0,0]
-		if square[0] == 0:
-			coordinate[0] = x_est
-		elif square[0] > 0:
-			coordinate[0] = square[0] + x_est
+		set_corners = set(corners)
+		if len(set_corners) < 2:
+			mistake = True
 		else:
-			coordinate[0] = - (abs(square[0]) - x_est)
-		if square[1] == 0:
-			coordinate[1] = y_est
-		elif square[1] > 0:
-			coordinate[1] = square[1] + y_est
-		else:
-			coordinate[1] = - (abs(square[1]) - y_est)
+			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
+			coordinate = calculate_coordinate(square, x_est, y_est)
 
 		for corner in corners_old:
 			if corner != None:
-				cv.circle(result,(corner[0],corner[1]), 50, (0,255,0), -1)
+				cv.circle(result,(corner[0],corner[1]), 40, (0,255,0), -1)
 
 		#overwritting the old points with the current points for next frame calculation
 		corners_old = corners
@@ -273,9 +291,9 @@ while True:
 			if corner != None:
 				cv.circle(result,(corner[0],corner[1]), 5, (255,255,255), -1)
 
-		if xside_new != None:
+		if xside_new != None and abs(xside_new - xside_old) < 30:
 			xside_old = xside_new
-		if yside_new != None:
+		if yside_new != None and abs(yside_new - yside_old) < 30:
 			yside_old = yside_new
 
 		#adding the coordinate values for the plot
@@ -287,7 +305,7 @@ while True:
 	#latest_qr is latest scanned qr code
 	if qr_counter == 0:
 		decoded = qr(crop)
-		print(decoded)
+		(decoded)
 		qr_counter = 5
 		if len(decoded) != 0 and latest_qr != decoded[0][0]:
 			latest_qr = decoded[0][0]
@@ -336,7 +354,7 @@ while True:
 	stacked = np.hstack((full_mask_3,resized,result))
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
-	k = cv.waitKey(0) & 0xFF
+	k = cv.waitKey(30) & 0xFF
 	if k == 27:
 		break
 

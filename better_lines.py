@@ -5,11 +5,11 @@ def filter_lines(lines, h , w):
     horizontal = {}
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        if abs(x1 - x2) < 10:
+        if abs(x1 - x2) < 8:
             line[0][1] = 0
             line[0][3] = h
             vertical = vertical_line(line, vertical)
-        elif abs(y1 - y2) < 10:
+        elif abs(y1 - y2) < 8:
             line[0][0] = 0
             line[0][2] = w
             horizontal = horizontal_line(line, horizontal)
