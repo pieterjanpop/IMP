@@ -2,13 +2,12 @@ from utils import *
 from better_lines import *
 from QR import *
 from polation import *
-from debugging import *
 import numpy as np
 import cv2 as cv
 import time
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('Video_2.mov')
+cap = cv.VideoCapture(0)
 
 #check if capture is correct
 if not cap.isOpened():
@@ -114,9 +113,22 @@ while True:
 				corners[0] = point
 
 		set_corners = set(corners)
+
+		if None in set_corners:
+			pass
+		elif mistake == False:
+			#start calculation 
+			start_x, start_y, length_side_x, length_side_y = interpolate(corners, x0, y0)
+			coordinate = [abs(start_x), abs(start_y)]
+			xside_old = length_side_x
+			yside_old = length_side_y
+			start = True
+
+			#overwritting the old points with the current points for next frame calculation
+			corners_old = corners
+
 		if mistake == True:
 			corners = check_corners(corners, xside_old, yside_old)
-			print(len(corners), 'mistake length corners')
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 			coordinate = calculate_coordinate(square, x_est, y_est)
 
@@ -133,18 +145,7 @@ while True:
 				xval.append(coordinate[0])
 				yval.append(coordinate[1])
 
-		if None in set_corners:
-			pass
-		elif mistake == False:
-			#start calculation 
-			start_x, start_y, length_side_x, length_side_y = interpolate(corners, x0, y0)
-			coordinate = [abs(start_x), abs(start_y)]
-			xside_old = length_side_x
-			yside_old = length_side_y
-			start = True
-
-			#overwritting the old points with the current points for next frame calculation
-			corners_old = corners
+			mistake = False
 	else:
 		#new_square checks wether there was a square change
 		new_square = None
@@ -282,7 +283,6 @@ while True:
 		print(square)
 		print(fps)
 		print("-----------------------------------------")
-		cv.circle(result,(x0,y0), 5, (255,255,255), -1)
 
 	else:
 		print("-----------------------------------------")

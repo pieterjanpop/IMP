@@ -1,6 +1,5 @@
 import numpy as np
 import cv2 as cv
-from math import dist
 
 ###CAMERA/IMAGE FUNCTIONS###
 
@@ -27,7 +26,7 @@ def undistort(frame):
     return dst
 
 def scale_down(frame):
-	dim = (300,200)
+	dim = (450,300)
 	resized = cv.resize(frame, dim, interpolation = cv.INTER_NEAREST)
 
 	return resized
