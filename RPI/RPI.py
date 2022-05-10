@@ -289,9 +289,5 @@ while True:
 		print("waiting for start square")
 		print("-----------------------------------------")
 
-	k = cv.waitKey(1) & 0xFF
-	if k == 27:
-		break
-
 cap.release()
 cv.destroyAllWindows()
