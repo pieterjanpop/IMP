@@ -1,13 +1,15 @@
 from utils import *
-from lines import *
+from better_lines import *
 from QR import *
 from polation import *
+from debugging import *
 import numpy as np
 import cv2 as cv
 import time
+from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture('Video_2.mov')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -28,6 +30,7 @@ fpsval = []
 #latest qr code
 latest_qr = None
 
+#initiate coordinate
 coordinate = "fail"
 
 #parameters for code:
@@ -37,9 +40,32 @@ coordinate = "fail"
 # qr_changed: To check if the drone reached new qr code
 start = False
 changed = False
-qr_changed = False
 square_counter = 0
 qr_counter = 0
+square = [0,0]
+mistake = False
+
+debug = True
+if debug == True:
+	x=[]
+	y=[]
+
+	plt.ion()
+
+	# here we are creating sub plots
+	figure, ax = plt.subplots(figsize=(10, 8))
+	line1, = ax.plot(x, y)
+
+	# naming the x axis
+	plt.xlabel('x - axis')
+	# naming the y axis
+	plt.ylabel('y - axis')
+		
+	# giving a title to my graph
+	plt.title('Flight of the drone')
+
+	# adding the grid
+	plt.grid()
 
 #while loop for entire video
 #capture is correct
@@ -47,31 +73,32 @@ while True:
 	#capture frame by frame
 	ret, frame = cap.read()
 
-	#undistort the frame
-	#dst = undistort(frame)
-
 	# if frame is read correctly ret is True
 	if not ret:
 		print("Can't receive frame (stream end?). Exiting ...")
 		break
 
-	#Calculate the center of the frame as reference point
-	#h, w, x0, y0 = dimensions(frame)
-
-	#crop the frame to select the the QR code out of the image
-	#crop = crop_image(frame, h ,w)
+	h, w, x0, y0 = dimensions(frame)
+	crop = crop_image(frame, h ,w)
 
 	#Resize it to a standard frame of 300x240
 	resized = scale_down(frame)
 
-	#Calculate the center of the resized frame as reference point
+	#Calculate the center of the frame as reference point
 	h, w, x0, y0 = dimensions(resized)
+
+	#crop the frame to select the the QR code out of the image
+	#crop = crop_image(resized, h ,w)
 
 	#create the mask of red line detection
 	full_mask = mask(resized)
 
+	#Bitwise-AND mask and original frame
+	result = cv.bitwise_and(resized, resized, mask= full_mask)
+
 	#Use the Hough transformation to calculate lines
-	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75, maxLineGap=10)
+	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75,maxLineGap=10)
+
 	if lines is None:
 		start = False
 		continue
@@ -80,8 +107,9 @@ while True:
 	filtered_lines = filter_lines(lines, h, w)
 
 	#Calculate the intersections of the lines
-	#sort the intersection points
-	intersection = sorted(points_intersection(filtered_lines, h, w))
+	intersection = points_intersection(filtered_lines, h, w)
+	if intersection is None:
+		continue
 
 	#start of the program
 	#left_bottom corner of the first square is the start position of the grid
@@ -96,7 +124,8 @@ while True:
 	xside_new = None
 	yside_new = None
 
-	if start == False:
+	if start == False or mistake == True:
+		intersection = sort_corners(intersection, x0, y0)
 		for point in intersection:
 			if point[0] >= x0 and point[1] >= y0:
 				corners[3] = point
@@ -108,13 +137,31 @@ while True:
 				corners[0] = point
 
 		set_corners = set(corners)
+		if mistake == True:
+			corners = check_corners(corners, xside_old, yside_old)
+			print(len(corners), 'mistake length corners')
+			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
+			coordinate = calculate_coordinate(square, x_est, y_est)
+
+			#overwritting the old points with the current points for next frame calculation
+			corners_old = corners
+
+			if xside_new != None:
+				xside_old = xside_new
+			if yside_new != None:
+				yside_old = yside_new
+
+			#adding the coordinate values for the plot
+			if coordinate != "fail":
+				xval.append(coordinate[0])
+				yval.append(coordinate[1])
+
 		if None in set_corners:
 			pass
-		else:
+		elif mistake == False:
 			#start calculation 
 			start_x, start_y, length_side_x, length_side_y = interpolate(corners, x0, y0)
 			coordinate = [abs(start_x), abs(start_y)]
-			square = [0,0]
 			xside_old = length_side_x
 			yside_old = length_side_y
 			start = True
@@ -127,34 +174,34 @@ while True:
 
 		#link the new points to the old labelled corners
 		for point in intersection:
-			if corners_old[0] != None and abs(point[0] - corners_old[0][0]) < w//6 and abs(point[1] - corners_old[0][1]) < w//6:
-				if point[0] > x0 + 7:
+			if corners_old[0] != None and abs(point[0] - corners_old[0][0]) < 40 and abs(point[1] - corners_old[0][1]) < 40:
+				if point[0] > x0 + 10:
 					new_square = "left"
-				elif point[1] > y0 + 7:
+				elif point[1] > y0 + 10:
 					new_square = "up"
 
 				corners[0] = point
 
-			elif corners_old[1] != None and abs(point[0] - corners_old[1][0]) < w//6 and abs(point[1] - corners_old[1][1]) < w//6:
-				if point[0] > x0 + 7:
+			elif corners_old[1] != None and abs(point[0] - corners_old[1][0]) < 40 and abs(point[1] - corners_old[1][1]) < 40:
+				if point[0] > x0 + 10:
 					new_square = "left"
-				elif point[1] < y0 - 7:
+				elif point[1] < y0 - 10:
 					new_square = "down"
 
 				corners[1] = point
 
-			elif corners_old[2] != None and abs(point[0] - corners_old[2][0]) < w//6 and abs(point[1] - corners_old[2][1]) < w//6:
-				if point[0] < x0 - 7:
+			elif corners_old[2] != None and abs(point[0] - corners_old[2][0]) < 40 and abs(point[1] - corners_old[2][1]) < 40:
+				if point[0] < x0 - 10:
 					new_square = "right"
-				elif point[1] > y0 + 7:
+				elif point[1] > y0 + 10:
 					new_square = "up"
 
 				corners[2] = point
 
-			elif corners_old[3] != None and abs(point[0] - corners_old[3][0]) < w//6 and abs(point[1] - corners_old[3][1]) < w//6:
-				if point[0] < x0 - 7:
+			elif corners_old[3] != None and abs(point[0] - corners_old[3][0]) < 40 and abs(point[1] - corners_old[3][1]) < 40:
+				if point[0] < x0 - 10:
 					new_square = "right"
-				elif point[1] < y0 - 7:
+				elif point[1] < y0 - 10:
 					new_square = "down"
 
 				corners[3] = point
@@ -199,58 +246,37 @@ while True:
 				corners[index] = None
 
 		corners = check_corners(corners, xside_old, yside_old)
-		set_corners = set(corners)
-		if None in set_corners:
-			for point in intersection:
-				if corners[3] == None and point[0] >= x0 and point[1] >= y0:
-					corners[3] = point
-				elif corners[2] == None and point[0] >= x0 and point[1] < y0:
-					corners[2] = point
-				elif corners[1] == None and point[0] < x0 and point[1] >= y0:
-					corners[1] = point
-				elif corners[0] == None and point[0] < x0 and point[1] < y0:
-					corners[0] = point
 
-		if None in set_corners:
-			coordinate = "fail"
+		set_corners = set(corners)
+		if len(set_corners) < 2:
+			mistake = True
 		else:
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
-			coordinate = [0,0]
-			if square[0] == 0:
-				coordinate[0] = x_est
-			elif square[0] > 0:
-				coordinate[0] = square[0] + x_est
-			else:
-				coordinate[0] = - (abs(square[0]) - x_est)
-			if square[1] == 0:
-				coordinate[1] = y_est
-			elif square[1] > 0:
-				coordinate[1] = square[1] + y_est
-			else:
-				coordinate[1] = - (abs(square[1]) - y_est)
+			coordinate = calculate_coordinate(square, x_est, y_est)
 
-		#overwritting the old points with the current points for next frame calculation
-		corners_old = corners
+			#overwritting the old points with the current points for next frame calculation
+			corners_old = corners
 
-		if xside_new != None:
-			xside_old = xside_new
-		if yside_new != None:
-			yside_old = yside_new
+			if xside_new != None and abs(xside_new - xside_old) < 30:
+				xside_old = xside_new
+			if yside_new != None and abs(yside_new - yside_old) < 30:
+				yside_old = yside_new
 
-		#adding the coordinate values for the plot
-		if coordinate != "fail":
-			xval.append(coordinate[0])
-			yval.append(coordinate[1])
+			#adding the coordinate values for the plot
+			if coordinate != "fail":
+				xval.append(coordinate[0])
+				yval.append(coordinate[1])
 
 	#QR code dedection
-	#latest_qr is the latest qr that is scanned 
-	#if qr_counter == 0:
-	#	decoded = qr(crop)
-	#	qr_counter = 100
-	#	if len(decoded) != 0 and latest_qr != decoded[0][0]:
-	#		latest_qr = decoded[0][0]
-	#else:
-	#	qr_counter -= 1
+	#latest_qr is latest scanned qr code
+	if qr_counter == 0:
+		decoded = qr(crop)
+		qr_counter = 5
+		if len(decoded) != 0 and latest_qr != decoded[0][0]:
+			latest_qr = decoded[0][0]
+			qr_counter = 50
+	else:  
+		qr_counter -= 1
 
 	# time when we finish processing for this frame
 	new_frame_time = time.time()
@@ -265,18 +291,30 @@ while True:
 	# converting the fps into integer
 	fps = int(fps)
 
+	# collect all the fps values
 	fpsval.append(fps)
 
+	# converting the fps to string so that we can display it on frame
+	# by using putText function
+	fps = str(fps)
+	
 	#print statements
 	if start == True:
 		print("-----------------------------------------")
+		print(round(coordinate[0], 2), round(coordinate[1], 2))
 		print(square)
-		print(coordinate)
+		print(fps)
 		print("-----------------------------------------")
+		cv.circle(result,(x0,y0), 5, (255,255,255), -1)
 
 	else:
 		print("-----------------------------------------")
 		print("waiting for start square")
 		print("-----------------------------------------")
 
+	k = cv.waitKey(1) & 0xFF
+	if k == 27:
+		break
+
 cap.release()
+cv.destroyAllWindows()

@@ -5,11 +5,11 @@ def filter_lines(lines, h , w):
     horizontal = {}
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        if abs(x1 - x2) < 8:
+        if abs(x1 - x2) < abs(y1 - y2):
             line[0][1] = 0
             line[0][3] = h
             vertical = vertical_line(line, vertical)
-        elif abs(y1 - y2) < 8:
+        else:
             line[0][0] = 0
             line[0][2] = w
             horizontal = horizontal_line(line, horizontal)
@@ -23,7 +23,7 @@ def vertical_line(line, vertical):
         vertical[line[0][0]] = [list(line[0])]
     else:
         for key in vertical:
-            if abs(key - line[0][0]) < 22:
+            if abs(key - line[0][0]) < 30:
                 vertical[key].append(list(line[0]))
                 return vertical
 
@@ -36,7 +36,7 @@ def horizontal_line(line, horizontal):
         horizontal[line[0][1]] = [list(line[0])]
     else:
         for key in horizontal:
-            if abs(key - line[0][1]) < 22:
+            if abs(key - line[0][1]) < 30:
                 horizontal[key].append(list(line[0]))
                 return horizontal
 

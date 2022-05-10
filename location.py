@@ -9,7 +9,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('Video.mov')
+cap = cv.VideoCapture('Video_2.mov')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -45,7 +45,7 @@ qr_counter = 0
 square = [0,0]
 mistake = False
 
-debug = False
+debug = True
 if debug == True:
 	x=[]
 	y=[]
@@ -102,6 +102,10 @@ while True:
 	if lines is None:
 		start = False
 		continue
+	elif debug == True:
+		for line in lines:
+			x1,y1,x2,y2 = line[0]
+			cv.line(result,(x1,y1),(x2,y2),(0,255,0),1)
 
 	#returns a filtered set of lines
 	filtered_lines = filter_lines(lines, h, w)
@@ -144,12 +148,14 @@ while True:
 		set_corners = set(corners)
 		if mistake == True:
 			corners = check_corners(corners, xside_old, yside_old)
+			print(len(corners), 'mistake length corners')
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 			coordinate = calculate_coordinate(square, x_est, y_est)
 
 			for corner in corners_old:
 				if corner != None:
-					cv.circle(result,(corner[0],corner[1]), 50, (0,255,0), -1)
+					#cv.circle(result,(corner[0],corner[1]), 40, (0,255,0), -1)
+					pass
 
 			#overwritting the old points with the current points for next frame calculation
 			corners_old = corners
@@ -157,9 +163,9 @@ while True:
 				if corner != None:
 					cv.circle(result,(corner[0],corner[1]), 5, (255,255,255), -1)
 
-			if xside_new != None and abs(xside_new - xside_old) < 30:
+			if xside_new != None:
 				xside_old = xside_new
-			if yside_new != None and abs(yside_new - yside_old) < 30:
+			if yside_new != None:
 				yside_old = yside_new
 
 			#adding the coordinate values for the plot
@@ -263,54 +269,55 @@ while True:
 			for point in intersection:
 				if corners[3] == None:
 					corners[3] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
+					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
 				elif corners[2] == None:
 					corners[2] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
+					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
 				elif corners[1] == None:
 					corners[1] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
+					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
 				elif corners[0] == None:
 					corners[0] = point
-					cv.circle(result,(point[0],point[1]), 5, (0,255,0), -1)
+					cv.circle(result,(point[0],point[1]), 10, (0,255,0), -1)
 
 		set_corners = set(corners)
 		if len(set_corners) < 2:
 			mistake = True
 		else:
+			print(corners)
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 			coordinate = calculate_coordinate(square, x_est, y_est)
 
-		for corner in corners_old:
-			if corner != None:
-				cv.circle(result,(corner[0],corner[1]), 40, (0,255,0), -1)
+			for corner in corners_old:
+				if corner != None:
+					#cv.circle(result,(corner[0],corner[1]), 40, (0,255,0), -1)
+					pass
 
-		#overwritting the old points with the current points for next frame calculation
-		corners_old = corners
-		for corner in corners:
-			if corner != None:
-				cv.circle(result,(corner[0],corner[1]), 5, (255,255,255), -1)
+			#overwritting the old points with the current points for next frame calculation
+			corners_old = corners
+			for corner in corners:
+				if corner != None:
+					cv.circle(result,(corner[0],corner[1]), 8, (255,255,255), -1)
 
-		if xside_new != None and abs(xside_new - xside_old) < 30:
-			xside_old = xside_new
-		if yside_new != None and abs(yside_new - yside_old) < 30:
-			yside_old = yside_new
+			if xside_new != None and abs(xside_new - xside_old) < 30:
+				xside_old = xside_new
+			if yside_new != None and abs(yside_new - yside_old) < 30:
+				yside_old = yside_new
 
-		#adding the coordinate values for the plot
-		if coordinate != "fail":
-			xval.append(coordinate[0])
-			yval.append(coordinate[1])
+			#adding the coordinate values for the plot
+			if coordinate != "fail":
+				xval.append(coordinate[0])
+				yval.append(coordinate[1])
 
 	#QR code dedection
 	#latest_qr is latest scanned qr code
 	if qr_counter == 0:
 		decoded = qr(crop)
-		(decoded)
 		qr_counter = 5
 		if len(decoded) != 0 and latest_qr != decoded[0][0]:
 			latest_qr = decoded[0][0]
 			qr_counter = 50
-	else:
+	else:  
 		qr_counter -= 1
 
 	# time when we finish processing for this frame
@@ -338,6 +345,7 @@ while True:
 		print("-----------------------------------------")
 		print(round(coordinate[0], 2), round(coordinate[1], 2))
 		print(square)
+		print(mistake)
 		#print(fps)
 		print("-----------------------------------------")
 		cv.circle(result,(x0,y0), 5, (255,255,255), -1)
@@ -354,7 +362,7 @@ while True:
 	stacked = np.hstack((full_mask_3,resized,result))
 	#Displays the result
 	cv.imshow('Result',cv.resize(stacked,None,fx=0.8,fy=0.8))
-	k = cv.waitKey(30) & 0xFF
+	k = cv.waitKey(1) & 0xFF
 	if k == 27:
 		break
 

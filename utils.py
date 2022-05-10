@@ -27,7 +27,7 @@ def undistort(frame):
     return dst
 
 def scale_down(frame):
-	dim = (300,240)
+	dim = (320,240)
 	resized = cv.resize(frame, dim, interpolation = cv.INTER_NEAREST)
 
 	return resized
