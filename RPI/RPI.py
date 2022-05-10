@@ -6,7 +6,6 @@ from debugging import *
 import numpy as np
 import cv2 as cv
 import time
-from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
 cap = cv.VideoCapture('Video_2.mov')
@@ -44,28 +43,6 @@ square_counter = 0
 qr_counter = 0
 square = [0,0]
 mistake = False
-
-debug = True
-if debug == True:
-	x=[]
-	y=[]
-
-	plt.ion()
-
-	# here we are creating sub plots
-	figure, ax = plt.subplots(figsize=(10, 8))
-	line1, = ax.plot(x, y)
-
-	# naming the x axis
-	plt.xlabel('x - axis')
-	# naming the y axis
-	plt.ylabel('y - axis')
-		
-	# giving a title to my graph
-	plt.title('Flight of the drone')
-
-	# adding the grid
-	plt.grid()
 
 #while loop for entire video
 #capture is correct
