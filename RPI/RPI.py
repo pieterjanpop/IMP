@@ -76,7 +76,6 @@ while True:
 	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75,maxLineGap=10)
 
 	if lines is None:
-		start = False
 		continue
 
 	#returns a filtered set of lines
