@@ -33,11 +33,11 @@ def mask(frame):
 
 	#Red is a color on both sides on the spectrum so we splith the mask in 2 parts
 	#lower boundary RED color range values; Hue (0 - 10)
-	lower1 = np.array([0, 60, 60])
+	lower1 = np.array([0, 80, 80])
 	upper1 = np.array([30, 255, 255])
 
 	#Upper boundary RED color range values; Hue (160 - 180)
-	lower2 = np.array([150, 60, 60])
+	lower2 = np.array([150, 80, 80])
 	upper2 = np.array([180, 255, 255])
 
 	#Threshold the HSV image to get only red colors
