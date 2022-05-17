@@ -6,12 +6,16 @@ def filter_lines(lines, h , w):
     for line in lines:
         x1, y1, x2, y2 = line[0]
         if abs(x1 - x2) < abs(y1 - y2):
+            line[0][0] = x1 * 1.5
             line[0][1] = 0
+            line[0][2] = x2 * 1.5
             line[0][3] = h
             vertical = vertical_line(line, vertical)
         else:
             line[0][0] = 0
+            line[0][1] = y1 * 1.5
             line[0][2] = w
+            line[0][3] = y2 * 1.5
             horizontal = horizontal_line(line, horizontal)
 
     sorted_lines = sort_lines(vertical, horizontal)

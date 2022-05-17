@@ -3,30 +3,14 @@ import cv2 as cv
 
 ###CAMERA/IMAGE FUNCTIONS###
 
-# Define Camera Matrix
-mtx = np.array([[9.975865066475905678e+02, 0.000000000000000000e+00, 2.782246584867496608e+02],
-                [0.000000000000000000e+00, 1.004004367713010424e+03, 2.802807082904876665e+02],
-                [0.000000000000000000e+00, 0.000000000000000000e+00, 1.000000000000000000e+00]])
-
-# Define distortion coefficients
-dist = np.array(
-    [-8.300163522364806257e-01, 3.943837308660838037e-01, -1.648646193160172024e-02, 2.217851985394334036e-02,
-     1.170058044562844124e+00])
-
-#corrects the frame from the camera
-def undistort(frame):
-    h, w = frame.shape[:2]
-    newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-
-    dst = cv.undistort(frame, mtx, dist, None, newcameramtx)
-
-    # Cropping the frame
-    x, y, w, h = roi
-    dst = dst[y:y + h, x:x + w]
-    return dst
-
 def scale_down(frame):
 	dim = (450,300)
+	resized = cv.resize(frame, dim, interpolation = cv.INTER_NEAREST)
+
+	return resized
+
+def scale_down_mask(frame):
+	dim = (300,200)
 	resized = cv.resize(frame, dim, interpolation = cv.INTER_NEAREST)
 
 	return resized
@@ -49,11 +33,11 @@ def mask(frame):
 
 	#Red is a color on both sides on the spectrum so we splith the mask in 2 parts
 	#lower boundary RED color range values; Hue (0 - 10)
-	lower1 = np.array([0, 80, 80])
+	lower1 = np.array([0, 60, 60])
 	upper1 = np.array([30, 255, 255])
 
 	#Upper boundary RED color range values; Hue (160 - 180)
-	lower2 = np.array([150, 80, 80])
+	lower2 = np.array([150, 60, 60])
 	upper2 = np.array([180, 255, 255])
 
 	#Threshold the HSV image to get only red colors

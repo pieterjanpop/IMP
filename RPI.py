@@ -2,12 +2,13 @@ from utils import *
 from better_lines import *
 from QR import *
 from polation import *
-import numpy as np
+from numpy import pi
 import cv2 as cv
 import time
 
+start_time = time.perf_counter()
 #Load a video input from file or camera
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture('Video_5.mov')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -20,16 +21,15 @@ prev_frame_time = 0
 # used to record the time at which we processed current frame
 new_frame_time = 0
 
-#plot values
-xval = []
-yval = []
-fpsval = []
-
 #latest qr code
 latest_qr = None
 
 #initiate coordinate
 coordinate = "fail"
+
+#plot values
+xval = []
+yval = []
 
 #parameters for code:
 # start: used for the start of the algorithm on the first frame, after that it is always False
@@ -43,9 +43,15 @@ qr_counter = 0
 square = [0,0]
 mistake = False
 
+k = 0
+
 #while loop for entire video
 #capture is correct
+timer = True
 while True:
+	#start of the while loop
+	start_while_loop = time.perf_counter()
+
 	#capture frame by frame
 	ret, frame = cap.read()
 
@@ -53,8 +59,14 @@ while True:
 	if not ret:
 		print("Can't receive frame (stream end?). Exiting ...")
 		break
+	
+	#timer of the camera procedures
+	start_camera = time.perf_counter()
 
+	#dimensions of the original feed
 	h, w, x0, y0 = dimensions(frame)
+
+	#the image is cropped to speed up the QR code detection
 	crop = crop_image(frame, h ,w)
 
 	#Resize it to a standard frame of 300x240
@@ -63,23 +75,30 @@ while True:
 	#Calculate the center of the frame as reference point
 	h, w, x0, y0 = dimensions(resized)
 
-	#crop the frame to select the the QR code out of the image
-	#crop = crop_image(resized, h ,w)
-
 	#create the mask of red line detection
 	full_mask = mask(resized)
 
-	#Bitwise-AND mask and original frame
-	result = cv.bitwise_and(resized, resized, mask= full_mask)
+	#end of the camera procedures
+	end_camera = time.perf_counter()
+	#start of houghlines and start of lines procedure
+	start_houghlines = time.perf_counter()
 
+	resized_full_mask = scale_down_mask(full_mask)
 	#Use the Hough transformation to calculate lines
-	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75,maxLineGap=10)
+	lines = cv.HoughLinesP(resized_full_mask,1,pi/180,100,minLineLength=75,maxLineGap=10)
 
+	#end of the houglines
+	end_houglines = time.perf_counter()
+
+	#if there are no lines the while loop is repeated
 	if lines is None:
 		continue
 
 	#returns a filtered set of lines
 	filtered_lines = filter_lines(lines, h, w)
+
+	#end of line procedure
+	end_lines = time.perf_counter()
 
 	#Calculate the intersections of the lines
 	intersection = points_intersection(filtered_lines, h, w)
@@ -102,7 +121,9 @@ while True:
 	if start == False or mistake == True:
 		intersection = sort_corners(intersection, x0, y0)
 		for point in intersection:
-			if point[0] >= x0 and point[1] >= y0:
+			if point == (0,0):
+				pass
+			elif point[0] >= x0 and point[1] >= y0:
 				corners[3] = point
 			elif point[0] >= x0 and point[1] < y0:
 				corners[2] = point
@@ -149,6 +170,9 @@ while True:
 		#new_square checks wether there was a square change
 		new_square = None
 
+		#start of linking the points to old corners
+		start_link = time.perf_counter()
+
 		#link the new points to the old labelled corners
 		for point in intersection:
 			if corners_old[0] != None and abs(point[0] - corners_old[0][0]) < 40 and abs(point[1] - corners_old[0][1]) < 40:
@@ -182,6 +206,9 @@ while True:
 					new_square = "down"
 
 				corners[3] = point
+
+		#end of linking the corners
+		end_linking = time.perf_counter()
 
 		#check if square changed last frame to advoid false double incrementations 
 		if changed == True:
@@ -225,15 +252,20 @@ while True:
 		corners = check_corners(corners, xside_old, yside_old)
 
 		set_corners = set(corners)
-		if len(set_corners) < 2:
+		if len(set_corners) < 2:	
 			mistake = True
 		else:
+			#start of calculations
+			start_calculations = time.perf_counter()
+
+			#interpolation to calculate the corners
 			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
 			coordinate = calculate_coordinate(square, x_est, y_est)
 
 			#overwritting the old points with the current points for next frame calculation
 			corners_old = corners
 
+			#overwriting the old sides with the new sides for further reference
 			if xside_new != None and abs(xside_new - xside_old) < 30:
 				xside_old = xside_new
 			if yside_new != None and abs(yside_new - yside_old) < 30:
@@ -247,11 +279,15 @@ while True:
 	#QR code dedection
 	#latest_qr is latest scanned qr code
 	if qr_counter == 0:
+		#start of qr proces
+		start_qr = time.perf_counter()
 		decoded = qr(crop)
 		qr_counter = 5
 		if len(decoded) != 0 and latest_qr != decoded[0][0]:
 			latest_qr = decoded[0][0]
 			qr_counter = 50
+		#end of the qr proces
+		end_qr = time.perf_counter()
 	else:  
 		qr_counter -= 1
 
@@ -268,13 +304,13 @@ while True:
 	# converting the fps into integer
 	fps = int(fps)
 
-	# collect all the fps values
-	fpsval.append(fps)
-
 	# converting the fps to string so that we can display it on frame
 	# by using putText function
 	fps = str(fps)
-	
+
+	#end of the process
+	end_frame = time.perf_counter()
+
 	#print statements
 	if start == True:
 		print("-----------------------------------------")
@@ -288,5 +324,22 @@ while True:
 		print("waiting for start square")
 		print("-----------------------------------------")
 
+	if timer == True and k > 5:
+		global_time = end_frame - start_while_loop
+		camera_time = end_camera - start_camera
+		hougline_time = end_houglines - start_houghlines
+		line_time = end_lines - end_houglines
+		total_line_time = hougline_time + line_time
+		linking_time = end_linking - start_link
+		calculation_time = end_frame - start_calculations
+		
+		frame_data = f'Frame {k}\n\nGlobal time: {global_time}\nCamera time: {camera_time}\nHoughline time: {hougline_time}\nLine time: {line_time}\nTotal time lines: {total_line_time}\nLinking time: {linking_time}\nCalculation time: {calculation_time}\n\nEnd of frame {k}\n\n'
+		with open('output.txt', 'a') as output:
+			output.write(frame_data)
+
+	k += 1
+
+print(xval)
+print(yval)
 cap.release()
 cv.destroyAllWindows()

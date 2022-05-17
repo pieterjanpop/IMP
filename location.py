@@ -9,7 +9,7 @@ import time
 from matplotlib import pyplot as plt
 
 #Load a video input from file or camera
-cap = cv.VideoCapture('Video_6.mov')
+cap = cv.VideoCapture('Video_5.mov')
 
 #check if capture is correct
 if not cap.isOpened():
@@ -79,6 +79,7 @@ while True:
 		break
 
 	h, w, x0, y0 = dimensions(frame)
+
 	crop = crop_image(frame, h ,w)
 
 	#Resize it to a standard frame of 300x240
@@ -87,20 +88,17 @@ while True:
 	#Calculate the center of the frame as reference point
 	h, w, x0, y0 = dimensions(resized)
 
-	#crop the frame to select the the QR code out of the image
-	#crop = crop_image(resized, h ,w)
-
 	#create the mask of red line detection
 	full_mask = mask(resized)
 
+	resized_full_mask = scale_down_mask(full_mask)
 	#Bitwise-AND mask and original frame
 	result = cv.bitwise_and(resized, resized, mask= full_mask)
 
 	#Use the Hough transformation to calculate lines
-	lines = cv.HoughLinesP(full_mask,1,np.pi/180,100,minLineLength=75,maxLineGap=10)
+	lines = cv.HoughLinesP(resized_full_mask,1,np.pi/180,100,minLineLength=75,maxLineGap=10)
 
 	if lines is None:
-		start = False
 		continue
 	elif debug == True:
 		for line in lines:
@@ -146,32 +144,6 @@ while True:
 				corners[0] = point
 
 		set_corners = set(corners)
-		if mistake == True:
-			xside_new, yside_new = calculate_side(corners, xside_old, yside_old)
-			corners = check_corners(corners, int(xside_new), int(yside_new))
-			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
-			coordinate = calculate_coordinate(square, x_est, y_est)
-
-			for corner in corners_old:
-				if corner != None:
-					#cv.circle(result,(corner[0],corner[1]), 40, (0,255,0), -1)
-					pass
-
-			#overwritting the old points with the current points for next frame calculation
-			corners_old = corners
-			for corner in corners:
-				if corner != None:
-					cv.circle(result,(corner[0],corner[1]), 5, (255,255,255), -1)
-
-			if xside_new != None:
-				xside_old = xside_new
-			if yside_new != None:
-				yside_old = yside_new
-
-			#adding the coordinate values for the plot
-			if coordinate != "fail":
-				xval.append(coordinate[0])
-				yval.append(coordinate[1])
 
 		if None in set_corners:
 			pass
@@ -185,6 +157,31 @@ while True:
 
 			#overwritting the old points with the current points for next frame calculation
 			corners_old = corners
+		
+		if mistake == True:
+			xside_new, yside_new = calculate_side(corners, xside_old, yside_old)
+			corners = check_corners(corners, int(xside_new), int(yside_new))
+			x_est, y_est, xside_new, yside_new = interpolate(corners, x0, y0)
+			coordinate = calculate_coordinate(square, x_est, y_est)
+
+			#overwritting the old points with the current points for next frame calculation
+			corners_old = corners
+			for corner in corners:
+				if corner != None:
+					cv.circle(result,(corner[0],corner[1]), 5, (255,255,255), -1)
+
+			if xside_new != None:
+				xside_old = xside_new
+			if yside_new != None:	
+				yside_old = yside_new
+
+			#adding the coordinate values for the plot
+			if coordinate != "fail":
+				xval.append(coordinate[0])
+				yval.append(coordinate[1])
+
+			mistake = True
+
 	else:
 		#new_square checks wether there was a square change
 		new_square = None
@@ -329,7 +326,7 @@ while True:
 		print("-----------------------------------------")
 		print(round(coordinate[0], 2), round(coordinate[1], 2))
 		print(square)
-		print(mistake)
+		print(latest_qr)
 		#print(fps)
 		print("-----------------------------------------")
 		cv.circle(result,(x0,y0), 5, (255,255,255), -1)
