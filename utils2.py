@@ -33,11 +33,11 @@ def mask(frame):
 
 	#Red is a color on both sides on the spectrum so we splith the mask in 2 parts
 	#lower boundary RED color range values; Hue (0 - 10)
-	lower1 = np.array([0, 80, 80])
+	lower1 = np.array([0, 60, 60])
 	upper1 = np.array([30, 255, 255])
 
 	#Upper boundary RED color range values; Hue (160 - 180)
-	lower2 = np.array([150, 80, 80])
+	lower2 = np.array([150, 60, 60])
 	upper2 = np.array([180, 255, 255])
 
 	#Threshold the HSV image to get only red colors
@@ -84,7 +84,7 @@ def line_intersection(line1, line2):
 	return (x, y)
 
 #calculates the sides of the square
-def calculate_side(corners, xside_old, yside_old):
+def calculate_side(corners, side_old):
 	x = 0
 	y = 0
 	xside = 0
@@ -102,16 +102,18 @@ def calculate_side(corners, xside_old, yside_old):
 					y += 1
 
 	if xside < 20:
-		xside = xside_old
+		xside = side_old
 	else:
 		xside /= x
 
 	if yside < 20:
-		yside = yside_old
+		yside = side_old
 	else:
 		yside /= y
 
-	return xside, yside
+	side_new = (xside + yside) / 2
+
+	return side_new
 
 #0: left_top
 #1: left_bottom
@@ -162,3 +164,11 @@ def calculate_coordinate(square, x_est, y_est):
 		coordinate[1] =- (abs(square[1]) - y_est)
 
 	return coordinate
+
+
+def calc_coord2(old_coord, x_est, y_est):
+	squarex = round(old_coord[0] - x_est)
+	squarey = round(old_coord[1] - y_est)
+
+	return [x_est + squarex, y_est + squarey]
+
